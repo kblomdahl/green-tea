@@ -1,0 +1,13 @@
+---
+exec: ./examples/rosenbrock.py
+params:
+  x:
+    type: uniform
+    range:
+      lower: -10.0
+      upper:  10.0
+  y:
+    type: uniform
+    range:
+      lower: -10.0
+      upper:  10.0

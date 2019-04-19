@@ -1,0 +1,33 @@
+---
+exec: ./examples/hartmann6.py
+params:
+  x1:
+    type: uniform
+    range:
+      lower: 0.0
+      upper: 1.0
+  x2:
+    type: uniform
+    range:
+      lower: 0.0
+      upper: 1.0
+  x3:
+    type: uniform
+    range:
+      lower: 0.0
+      upper: 1.0
+  x4:
+    type: uniform
+    range:
+      lower: 0.0
+      upper: 1.0
+  x5:
+    type: uniform
+    range:
+      lower: 0.0
+      upper: 1.0
+  x6:
+    type: uniform
+    range:
+      lower: 0.0
+      upper: 1.0
