@@ -132,9 +132,11 @@ def generate_sample(problem, trained_classifiers):
 def fit_classifier(points, values):
     def fit_one_classifier(x, y):
         c = GradientBoostingClassifier(n_estimators=200)
-        c.fit(x, y)
-
-        return c
+        try:
+            c.fit(x, y)
+            return c
+        except ValueError:
+            return None
 
     num_folds = 5
     num_samples = len(points)
@@ -161,21 +163,25 @@ def fit_classifier(points, values):
             values[np.isin(fold_indices, current_fold, invert=True)]
         )
 
-        if current_fold.size > 0:
-            classifier_score = classifier.score(
-                points[np.isin(fold_indices, current_fold), :],
-                values[np.isin(fold_indices, current_fold)]
-            )
-        else:
-            classifier_score = classifier.score(points, values)
+        if classifier is not None:
+            if current_fold.size > 0:
+                classifier_score = classifier.score(
+                    points[np.isin(fold_indices, current_fold), :],
+                    values[np.isin(fold_indices, current_fold)]
+                )
+            else:
+                classifier_score = classifier.score(points, values)
 
-        classifiers.append(classifier)
-        classifier_scores.append(classifier_score)
+            classifiers.append(classifier)
+            classifier_scores.append(classifier_score)
 
     # return the classifier with the best _validation score_
-    best_classifier_index = max(range(num_folds), key=lambda j: classifier_scores[j])
+    try:
+        best_classifier_index = max(range(num_folds), key=lambda j: classifier_scores[j])
 
-    return classifiers[best_classifier_index], classifier_scores[best_classifier_index]
+        return classifiers[best_classifier_index], classifier_scores[best_classifier_index]
+    except IndexError:
+        return None, 0.0
 
 
 def main():
