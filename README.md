@@ -28,8 +28,8 @@ parameters to minimize it over:
 - `exec` (required) - Path to an executable that execute the process to be minimized. It will be provided a YAML file
   containing the parameter values from standard input.
 - `params` (required) - The parameters to optimize over, each parameter has a few properties:
-  - `type` (required) - `real` or `integer`
-  - `range` (required) - The `lower` (inclusive) and `upper` (inclusive) bound of the parameter.
+  - `type` (required) - `uniform` or `real`
+  - `range` (required) - The `lower` (inclusive) and `upper` (inclusive) bound of the parameter. For `normal` parameters one can also set `mean` and `std`.
 
 #### Example
 
