@@ -67,5 +67,5 @@ See [the paper](https://arxiv.org/abs/1805.10255) for full details.
 ## TODO
 
 - [ ] Add support for constraints.
-- [ ] Add support for additional parameter types, for example `integer`.
+- [x] Add support for additional parameter types, for example `integer`.
 - [ ] Investigate fuzzy classification to help with noisy evaluation functions.

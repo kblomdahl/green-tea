@@ -57,15 +57,25 @@ class FeatureNormalGenerator(FeatureGenerator):
         return self._generator.rvs(size=n)
 
 
+class FeatureIntegerGenerator(FeatureGenerator):
+    def __init__(self, config):
+        FeatureGenerator.__init__(self, config)
+
+    def __call__(self, n=1):
+        return np.random.randint(self.lower, self.upper + 1, size=n)
+
+
 class Feature:
     def __init__(self, name, config):
         self.name = name
-        self.type = config['type']
+        self.type = config['type'].lower()
 
         if self.type == 'uniform':
             self._generator = FeatureUniformGenerator(config['range'])
         elif self.type == 'normal':
             self._generator = FeatureNormalGenerator(config['range'])
+        elif self.type == 'integer':
+            self._generator = FeatureIntegerGenerator(config['range'])
         else:
             raise ValueError('Unsupported parameter type -- ' + self.type)
 
