@@ -14,10 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import yaml
-import sys
+import argparse
 import math
 import numpy as np
+import sys
+import yaml
 
 from sklearn.ensemble import GradientBoostingClassifier
 from subprocess import Popen, DEVNULL, PIPE
@@ -185,9 +186,15 @@ def fit_classifier(points, values):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', dest='total_sample_budget', type=int)
+    parser.add_argument('-b', dest='num_batches', type=int)
+
+    args = parser.parse_args()
     problem = Problem(yaml.safe_load(sys.stdin))
-    total_sample_budget = 200
-    classifier_budget = math.ceil(total_sample_budget / 18)
+    total_sample_budget = args.total_sample_budget or 200
+    num_batches = args.num_batches or 18
+    classifier_budget = math.ceil(total_sample_budget / num_batches)
 
     trained_classifiers = []
     batch_points = []
@@ -208,7 +215,7 @@ def main():
             if global_min_value == y:
                 global_min_point = x
 
-                # train and add one additional classifier if we have reaches the threshold
+            # train and add one additional classifier if we have reaches the threshold
             is_last_sample = t == (total_sample_budget - 1)
 
             if len(batch_points) >= classifier_budget or is_last_sample:
