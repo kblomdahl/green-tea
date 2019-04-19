@@ -118,7 +118,9 @@ def generate_sample(problem, trained_classifiers):
     while True:
         samples = problem.sample(n=32)
 
-        for c in trained_classifiers:
+        # prune samples that any classifier considers bad in reverse order since more
+        # recent classifiers _should_ be more strict, and therefore fail faster.
+        for c in reversed(trained_classifiers):
             p = c.predict(samples)
             samples = samples[p > 0, :]
 
@@ -233,7 +235,7 @@ def main():
                     batch_points.clear()
                     batch_values.clear()
 
-                print('{: 4} -- global_min {:.6e}, local_min {:.6e}, local_median {:.6e}, accuracy {:.3f} ({})'.format(
+                print('{:5} -- global_min {:.6e}, local_min {:.6e}, local_median {:.6e}, accuracy {:.3f} ({})'.format(
                     t + 1,
                     global_min_value,
                     y_min,
