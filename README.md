@@ -31,6 +31,7 @@ parameters to minimize it over:
   - `type` (required) - `uniform` or `real`
   - `shape` (optional) - The shape of the parameter, for example `[2, 8]`.
   - `range` (required) - The `lower` (inclusive) and `upper` (inclusive) bound of the parameter. For `normal` parameters one can also set `mean` and `std`.
+- `constraints` (optional) - The global constraints to apply.
 
 #### Example
 
@@ -40,13 +41,13 @@ params:
   x:
     type: uniform
     range:
-      lower: -10.0
-      upper: 10.0
+      lower: -2.0
+      upper: 2.0
   y:
     type: uniform
     range:
-      lower: -10.0
-      upper: 10.0
+      lower: -2.0
+      upper: 2.0
 ```
 
 ## How it works
@@ -67,6 +68,6 @@ See [the paper](https://arxiv.org/abs/1805.10255) for full details.
 
 ## TODO
 
-- [ ] Add support for constraints.
+- [x] Add support for constraints.
 - [x] Add support for additional parameter types, for example `integer`.
 - [ ] Investigate fuzzy classification to help with noisy evaluation functions.

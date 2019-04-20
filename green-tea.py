@@ -90,10 +90,21 @@ class Feature:
         return self._generator(n=n)
 
 
+class Constraint:
+    def __init__(self, code):
+        self._code = compile(code, code, 'eval', dont_inherit=True)
+
+    def __call__(self, sample):
+        return eval(self._code, {}, sample.todict())
+
+
 class Sample:
     def __init__(self, features):
         self._features = features
         self._values = {}
+
+    def todict(self):
+        return self._values
 
     def tolist(self):
         return np.asarray(
@@ -122,6 +133,10 @@ class Sample:
 class Problem:
     def __init__(self, config):
         self.exec_path = config['exec']
+        self.constraints = list(map(
+            lambda constraint: Constraint(constraint),
+            config.get('constraints', [])
+        ))
         self.features = list(map(
             lambda feature: Feature(feature[0], feature[1]),
             config['params'].items()
@@ -134,21 +149,25 @@ class Problem:
 
             return float(stdout)
 
-    def sample(self, n=1):
+    def sample(self, up_to_n=1):
         num_features = len(self.features)
-        samples = list([Sample(self.features) for _ in range(n)])
+        samples = list([Sample(self.features) for _ in range(up_to_n)])
 
         for i in range(num_features):
-            samples_i = self.features[i](n=n)
-            for j in range(n):
+            samples_i = self.features[i](n=up_to_n)
+            for j in range(up_to_n):
                 samples[j][self.features[i].name] = samples_i[j, :]
+
+        # prune samples that does not satisfy all constraints
+        for c in self.constraints:
+            samples = list([s for s in samples if c(s)])
 
         return samples
 
 
 def generate_sample(problem, trained_classifiers):
     while True:
-        samples = problem.sample(n=32)
+        samples = problem.sample(up_to_n=64)
 
         # prune samples that any classifier considers bad in reverse order since more
         # recent classifiers _should_ be more strict, and therefore fail faster.

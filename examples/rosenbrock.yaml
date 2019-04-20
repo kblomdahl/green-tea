@@ -4,10 +4,13 @@ params:
   x:
     type: uniform
     range:
-      lower: -10.0
-      upper:  10.0
+      lower: -2.0
+      upper:  2.0
   y:
     type: uniform
     range:
-      lower: -10.0
-      upper:  10.0
+      lower: -2.0
+      upper:  2.0
+constraints:
+  - x + y <  2
+  - x + y > -2
