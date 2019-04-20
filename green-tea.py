@@ -25,28 +25,30 @@ from subprocess import Popen, DEVNULL, PIPE
 
 
 class FeatureGenerator:
-    def __init__(self, config):
-        self.lower = config.get('lower', -math.inf)
-        self.upper = config.get('upper',  math.inf)
+    def __init__(self, config, range_):
+        self.lower = range_.get('lower', -math.inf)
+        self.upper = range_.get('upper',  math.inf)
+        self.shape = config.get('shape', [1])
+        self.flat_shape = int(np.prod(self.shape))
 
 
 class FeatureUniformGenerator(FeatureGenerator):
-    def __init__(self, config):
-        FeatureGenerator.__init__(self, config)
+    def __init__(self, config, range_):
+        FeatureGenerator.__init__(self, config, range_)
 
         from scipy.stats import uniform
         self._generator = uniform(loc=self.lower, scale=self.upper - self.lower)
 
     def __call__(self, n=1):
-        return self._generator.rvs(size=n)
+        return self._generator.rvs(size=n * self.flat_shape).reshape([n] + self.shape)
 
 
 class FeatureNormalGenerator(FeatureGenerator):
-    def __init__(self, config):
-        FeatureGenerator.__init__(self, config)
+    def __init__(self, config, range_):
+        FeatureGenerator.__init__(self, config, range_)
 
-        self.mean = config.get('mean', (self.upper + self.lower) / 2.0)
-        self.std = config.get('std', 1.0)
+        self.mean = range_.get('mean', (self.upper + self.lower) / 2.0)
+        self.std = range_.get('std', 1.0)
 
         if not math.isfinite(self.mean):
             self.mean = 0.0
@@ -55,15 +57,15 @@ class FeatureNormalGenerator(FeatureGenerator):
         self._generator = norm(loc=self.mean, scale=self.std)
 
     def __call__(self, n=1):
-        return self._generator.rvs(size=n)
+        return self._generator.rvs(size=n * self.flat_shape).reshape([n] + self.shape)
 
 
 class FeatureIntegerGenerator(FeatureGenerator):
-    def __init__(self, config):
-        FeatureGenerator.__init__(self, config)
+    def __init__(self, config, range_):
+        FeatureGenerator.__init__(self, config, range_)
 
     def __call__(self, n=1):
-        return np.random.randint(self.lower, self.upper + 1, size=n)
+        return np.random.randint(self.lower, self.upper + 1, size=n * self.flat_shape).reshape([n] + self.shape)
 
 
 class Feature:
@@ -72,16 +74,49 @@ class Feature:
         self.type = config['type'].lower()
 
         if self.type == 'uniform':
-            self._generator = FeatureUniformGenerator(config['range'])
+            self._generator = FeatureUniformGenerator(config, config['range'])
         elif self.type == 'normal':
-            self._generator = FeatureNormalGenerator(config['range'])
+            self._generator = FeatureNormalGenerator(config, config['range'])
         elif self.type == 'integer':
-            self._generator = FeatureIntegerGenerator(config['range'])
+            self._generator = FeatureIntegerGenerator(config, config['range'])
         else:
             raise ValueError('Unsupported parameter type -- ' + self.type)
 
+    @property
+    def flat_shape(self):
+        return self._generator.flat_shape
+
     def __call__(self, n=1):
         return self._generator(n=n)
+
+
+class Sample:
+    def __init__(self, features):
+        self._features = features
+        self._values = {}
+
+    def tolist(self):
+        return np.asarray(
+            [element for value in self._values.values() for element in value],
+            np.float32
+        )
+
+    def safe_dump(self, dump_to):
+        def tolist_or_scalar(arr):
+            if arr.size == 1:
+                return float(arr)
+            return arr.tolist()
+
+        yaml.safe_dump(
+            {key: tolist_or_scalar(value) for key, value in self._values.items()},
+            dump_to
+        )
+
+    def __getitem__(self, item):
+        return self._values[item]
+
+    def __setitem__(self, key, value):
+        self._values[key] = value
 
 
 class Problem:
@@ -92,25 +127,22 @@ class Problem:
             config['params'].items()
         ))
 
-    def dump_sample(self, x, dump_to):
-        yaml.safe_dump(
-            {feature.name: float(x[i]) for i, feature in enumerate(self.features)},
-            dump_to
-        )
-
     def evaluate(self, sample):
         with Popen(self.exec_path, shell=True, encoding='utf8', stdin=PIPE, stdout=PIPE, stderr=DEVNULL) as program:
-            self.dump_sample(sample, program.stdin)
+            sample.safe_dump(program.stdin)
             stdout, _ = program.communicate()
 
             return float(stdout)
 
     def sample(self, n=1):
-        k = len(self.features)
-        samples = np.zeros((n, k), np.float32)
+        num_features = len(self.features)
+        samples = list([Sample(self.features) for _ in range(n)])
 
-        for i in range(k):
-            samples[:, i] = self.features[i](n=n)
+        for i in range(num_features):
+            samples_i = self.features[i](n=n)
+            for j in range(n):
+                samples[j][self.features[i].name] = samples_i[j, :]
+
         return samples
 
 
@@ -121,14 +153,14 @@ def generate_sample(problem, trained_classifiers):
         # prune samples that any classifier considers bad in reverse order since more
         # recent classifiers _should_ be more strict, and therefore fail faster.
         for c in reversed(trained_classifiers):
-            p = c.predict(samples)
-            samples = samples[p > 0, :]
+            p = c.predict([s.tolist() for s in samples])
+            samples = list([samples[i] for i, p_ in enumerate(p) if p_])
 
-            if samples.size == 0:
+            if not samples:
                 break  # early exit
 
         # if there are any samples training after pruning then they passed training
-        if samples.size > 0:
+        if samples:
             return samples[0]
 
 
@@ -225,7 +257,7 @@ def main():
                 y_min = np.min(batch_values)
 
                 classifier, classifier_score = fit_classifier(
-                    batch_points,
+                    list(map(lambda x: x.tolist(), batch_points)),
                     list(map(lambda y: 1 if y < y_median else 0, batch_values))
                 )
                 accepted_classifier = classifier_score >= 0.51
@@ -245,7 +277,8 @@ def main():
                     file=sys.stderr
                 ))
     finally:
-        problem.dump_sample(global_min_point, sys.stdout)
+        if global_min_point:
+            global_min_point.safe_dump(sys.stdout)
 
 
 if __name__ == '__main__':

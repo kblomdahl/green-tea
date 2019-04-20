@@ -9,14 +9,7 @@ params = yaml.safe_load(sys.stdin)
 if not params:
     exit(1)
 
-x = np.asarray([
-    params['x1'],
-    params['x2'],
-    params['x3'],
-    params['x4'],
-    params['x5'],
-    params['x6'],
-], np.float32)
+x = np.asarray(params['x'], np.float32)
 
 alpha = np.asarray([
     1.0,
