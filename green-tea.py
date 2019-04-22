@@ -177,6 +177,18 @@ class Problem:
                 return samples
 
 
+class Classifier:
+    def __init__(self, x, y):
+        self._c = GradientBoostingClassifier(n_estimators=200)
+        self._c.fit(x, y)
+
+    def predict(self, x):
+        return self._c.predict(x)
+
+    def score(self, x, y):
+        return self._c.score(x, y)
+
+
 def generate_sample(problem, trained_classifiers):
     while True:
         samples = problem.sample(up_to_n=64)
@@ -196,14 +208,6 @@ def generate_sample(problem, trained_classifiers):
 
 
 def fit_classifier(points, values):
-    def fit_one_classifier(x, y):
-        c = GradientBoostingClassifier(n_estimators=200)
-        try:
-            c.fit(x, y)
-            return c
-        except ValueError:
-            return None
-
     num_folds = 5
     num_samples = len(points)
     fold_size = num_samples // num_folds
@@ -224,12 +228,13 @@ def fit_classifier(points, values):
 
     for i in range(num_folds):
         current_fold = np.arange(i * fold_size, (i + 1) * fold_size)
-        classifier = fit_one_classifier(
-            points[np.isin(fold_indices, current_fold, invert=True), :],
-            values[np.isin(fold_indices, current_fold, invert=True)]
-        )
 
-        if classifier is not None:
+        try:
+            classifier = Classifier(
+                points[np.isin(fold_indices, current_fold, invert=True), :],
+                values[np.isin(fold_indices, current_fold, invert=True)]
+            )
+
             if current_fold.size > 0:
                 classifier_score = classifier.score(
                     points[np.isin(fold_indices, current_fold), :],
@@ -240,6 +245,8 @@ def fit_classifier(points, values):
 
             classifiers.append(classifier)
             classifier_scores.append(classifier_score)
+        except ValueError:
+            pass
 
     # return the classifier with the best _validation score_
     try:
