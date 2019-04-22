@@ -120,7 +120,8 @@ class Sample:
 
         yaml.safe_dump(
             {key: tolist_or_scalar(value) for key, value in self._values.items()},
-            dump_to
+            dump_to,
+            explicit_start=True
         )
 
     def __getitem__(self, item):
@@ -275,6 +276,7 @@ def main():
             global_min_value = np.min([global_min_value, y])
             if global_min_value == y:
                 global_min_point = x
+                global_min_point.safe_dump(sys.stdout)
 
             # train and add one additional classifier if we have reaches the threshold
             is_last_sample = t == (total_sample_budget - 1)
@@ -294,15 +296,17 @@ def main():
                     batch_points.clear()
                     batch_values.clear()
 
-                print('{:5} -- global_min {:.6e}, local_min {:.6e}, local_median {:.6e}, accuracy {:.3f} ({})'.format(
-                    t + 1,
-                    global_min_value,
-                    y_min,
-                    y_median,
-                    classifier_score,
-                    'ok' if accepted_classifier else 'no',
+                print(
+                    '{:5} -- global_min {:.6e}, local_min {:.6e}, local_median {:.6e}, accuracy {:.3f} ({})'.format(
+                        t + 1,
+                        global_min_value,
+                        y_min,
+                        y_median,
+                        classifier_score,
+                        'ok' if accepted_classifier else 'no'
+                    ),
                     file=sys.stderr
-                ))
+                )
     finally:
         if global_min_point:
             global_min_point.safe_dump(sys.stdout)
