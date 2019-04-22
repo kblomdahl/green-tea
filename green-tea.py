@@ -21,7 +21,7 @@ import sys
 import yaml
 
 from sklearn.ensemble import GradientBoostingClassifier
-from subprocess import Popen, DEVNULL, PIPE
+from subprocess import Popen, PIPE
 
 
 class FeatureGenerator:
