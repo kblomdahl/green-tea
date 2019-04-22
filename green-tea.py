@@ -160,18 +160,21 @@ class Problem:
 
     def sample(self, up_to_n=1):
         num_features = len(self.features)
-        samples = list([Sample(self.features) for _ in range(up_to_n)])
 
-        for i in range(num_features):
-            samples_i = self.features[i](n=up_to_n)
-            for j in range(up_to_n):
-                samples[j][self.features[i].name] = samples_i[j, :]
+        while True:
+            samples = list([Sample(self.features) for _ in range(up_to_n)])
 
-        # prune samples that does not satisfy all constraints
-        for c in self.constraints:
-            samples = list([s for s in samples if c(s)])
+            for i in range(num_features):
+                samples_i = self.features[i](n=up_to_n)
+                for j in range(up_to_n):
+                    samples[j][self.features[i].name] = samples_i[j, :]
 
-        return samples
+            # prune samples that does not satisfy all constraints
+            for c in self.constraints:
+                samples = list([s for s in samples if c(s)])
+
+            if len(samples) > 0:
+                return samples
 
 
 def generate_sample(problem, trained_classifiers):
