@@ -143,11 +143,19 @@ class Problem:
         ))
 
     def evaluate(self, sample):
-        with Popen(self.exec_path, shell=True, encoding='utf8', stdin=PIPE, stdout=PIPE, stderr=DEVNULL) as program:
+        with Popen(self.exec_path, shell=True, encoding='utf8', stdin=PIPE, stdout=PIPE, stderr=PIPE) as program:
             sample.safe_dump(program.stdin)
-            stdout, _ = program.communicate()
+            stdout, stderr = program.communicate()
 
-            return float(stdout)
+            try:
+                return float(stdout)
+            except ValueError:
+                print('Could not parse problem output.', file=sys.stderr)
+                print('--- Output ---', file=sys.stderr)
+                print(stdout, file=sys.stderr)
+                print('--- Error ---', file=sys.stderr)
+                print(stderr, file=sys.stderr)
+                exit(1)
 
     def sample(self, up_to_n=1):
         num_features = len(self.features)
