@@ -83,7 +83,19 @@ should have the following properties:
 These properties limits us to relatively simple algorithms. Currently the following seems feasible:
 
 1. Gradient Boosting Decision Trees
-2. Logistic Regression - _This may produce too aggressive cuts._
+2. Logistic Regression - _This may produce too aggressive cuts, consider increasing `-p` for this_
+
+#### Classification Classes
+
+The percentage of samples that are classified as _Good_ and _Bad_ can be controlled with the `-p` argument, by default
+is 50:
+
+```bash
+./green-tea.py -p 75 < [control file]
+```
+
+It may be useful to tune this parameter for certain problems where, for example the initial feasible set is very
+large, the evaluation function looks like a parabolic function, or has many highs and valleys.
 
 ## TODO
 

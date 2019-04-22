@@ -261,11 +261,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', dest='total_sample_budget', type=int)
     parser.add_argument('-b', dest='num_batches', type=int)
+    parser.add_argument('-p', dest='percentile', type=int)
 
     args = parser.parse_args()
     problem = Problem(yaml.safe_load(sys.stdin))
-    total_sample_budget = args.total_sample_budget or 200
-    num_batches = args.num_batches or 18
+    total_sample_budget = args.total_sample_budget or 200  # the total number of samples to produce
+    num_batches = args.num_batches or 18  # the total number of batches to produce
+    percent_as_good = args.percentile or 50  # the percentage of samples to classify as _good_
     classifier_budget = math.ceil(total_sample_budget / num_batches)
 
     trained_classifiers = []
@@ -292,7 +294,7 @@ def main():
             is_last_sample = t == (total_sample_budget - 1)
 
             if len(batch_points) >= classifier_budget or is_last_sample:
-                y_median = np.median(batch_values)
+                y_median = np.percentile(batch_values, percent_as_good)
                 y_min = np.min(batch_values)
 
                 classifier, classifier_score = fit_classifier(
