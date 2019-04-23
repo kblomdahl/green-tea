@@ -12,7 +12,8 @@ minimizing noisy, and slow evaluation functions, such as:
 ## Dependencies
 
 - [Python 3.6](https://www.python.org/downloads/)
-- [SkLearn 0.21](https://scikit-learn.org/stable/)
+- [SciPy 1.2.1](https://www.scipy.org/)
+- [XGBoost 0.82](https://xgboost.readthedocs.io/)
 
 ## Usage
 

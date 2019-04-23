@@ -20,7 +20,6 @@ import numpy as np
 import sys
 import yaml
 
-from sklearn.ensemble import GradientBoostingClassifier
 from subprocess import Popen, PIPE
 
 
@@ -179,7 +178,9 @@ class Problem:
 
 class Classifier:
     def __init__(self, x, y):
-        self._c = GradientBoostingClassifier(n_estimators=200)
+        import xgboost as xgb
+
+        self._c = xgb.XGBClassifier(n_estimators=200)
         self._c.fit(x, y)
 
     def predict(self, x):

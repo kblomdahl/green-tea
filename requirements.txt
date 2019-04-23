@@ -1,2 +1,4 @@
-sklearn
+numpy
+scipy
 pyyaml
+xgboost
