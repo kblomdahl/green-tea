@@ -12,7 +12,7 @@ minimizing noisy, and slow evaluation functions, such as:
 ## Dependencies
 
 - [Python 3.6](https://www.python.org/downloads/)
-- [SciPy 1.2.1](https://www.scipy.org/)
+- [SciPy 1.2.1](https://www.scipy.org/) (and [SKLearn](https://scikit-learn.org/))
 - [XGBoost 0.82](https://xgboost.readthedocs.io/)
 
 ## Usage
