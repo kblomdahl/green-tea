@@ -25,8 +25,8 @@ from subprocess import Popen, PIPE
 
 class FeatureGenerator:
     def __init__(self, config, range_):
-        self.lower = range_.get('lower', -math.inf)
-        self.upper = range_.get('upper',  math.inf)
+        self.lower = float(range_.get('lower', -math.inf))
+        self.upper = float(range_.get('upper',  math.inf))
         self.shape = config.get('shape', [1])
         self.flat_shape = int(np.prod(self.shape))
 
@@ -114,7 +114,7 @@ class Sample:
     def safe_dump(self, dump_to):
         def tolist_or_scalar(arr):
             if arr.size == 1:
-                return float(arr)
+                return float(arr) if arr.dtype.kind == 'f' else int(arr)
             return arr.tolist()
 
         yaml.safe_dump(
