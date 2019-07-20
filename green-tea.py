@@ -20,6 +20,7 @@ import numpy as np
 import sys
 import yaml
 
+from concurrent.futures import ThreadPoolExecutor
 from subprocess import Popen, PIPE
 
 
@@ -263,12 +264,14 @@ def main():
     parser.add_argument('-n', dest='total_sample_budget', type=int)
     parser.add_argument('-b', dest='num_batches', type=int)
     parser.add_argument('-p', dest='percentile', type=int)
+    parser.add_argument('-j', dest='num_workers', type=int)
 
     args = parser.parse_args()
     problem = Problem(yaml.safe_load(sys.stdin))
     total_sample_budget = args.total_sample_budget or 200  # the total number of samples to produce
     num_batches = args.num_batches or 18  # the total number of batches to produce
     percent_as_good = args.percentile or 50  # the percentage of samples to classify as _good_
+    num_workers = args.num_workers or 1  # the number of parallel evaluations
     classifier_budget = math.ceil(total_sample_budget / num_batches)
 
     trained_classifiers = []
@@ -279,17 +282,38 @@ def main():
     global_min_value = math.inf
 
     try:
-        for t in range(total_sample_budget):
-            x = generate_sample(problem, trained_classifiers)
-            y = problem.evaluate(x)
+        t = 0
 
-            batch_points.append(x)
-            batch_values.append(y)
+        while t < total_sample_budget:
+            remaining_samples = max(
+                1,
+                min(
+                    classifier_budget - len(batch_points),
+                    total_sample_budget - t
+                )
+            )
 
-            global_min_value = np.min([global_min_value, y])
-            if global_min_value == y:
-                global_min_point = x
-                global_min_point.safe_dump(sys.stdout)
+            def evaluate_sample(x):
+                y = problem.evaluate(x)
+
+                return x, y
+
+            with ThreadPoolExecutor(max_workers=num_workers) as executor:
+                xs = executor.map(
+                    lambda _: generate_sample(problem, trained_classifiers),
+                    range(remaining_samples)
+                )
+
+                for x, y in executor.map(evaluate_sample, list(xs)):
+                    batch_points.append(x)
+                    batch_values.append(y)
+
+                    global_min_value = np.min([global_min_value, y])
+                    if global_min_value == y:
+                        global_min_point = x
+                        global_min_point.safe_dump(sys.stdout)
+
+                    t += 1
 
             # train and add one additional classifier if we have reaches the threshold
             is_last_sample = t == (total_sample_budget - 1)
